@@ -1,0 +1,36 @@
+space_invaders/
+│
+├── main.py                 # Punto de entrada principal
+├── config.py              # Configuraciones globales
+├── data/
+│   ├── highscores.txt     # Archivo para guardar puntajes
+│   └── help.txt           # Archivo con instrucciones de ayuda
+│
+├── graficos/
+│   ├── jugador_celeste.png
+│   ├── jugador_morado.png
+│   ├── verde.png
+│   ├── amarillo.png
+│   └── rojo.png
+│
+├── sonidos/
+│   ├── laser.wav
+│   ├── explosion.wav
+│   └── musica.wav
+│
+├── classes/
+│   ├── __init__.py
+│   ├── player.py          # Clase para los jugadores
+│   ├── enemy.py           # Clase para los enemigos
+│   ├── bullet.py          # Clase para las balas
+│   ├── obstacle.py        # Clase para los obstáculos
+│   └── game_state.py      # Clase para manejar el estado del juego
+│
+└── screens/
+    ├── __init__.py
+    ├── menu.py            # Pantalla de menú
+    ├── game.py            # Pantalla de juego
+    ├── help.py            # Pantalla de ayuda
+    ├── highscores.py      # Pantalla de puntajes altos
+    ├── victory.py         # Pantalla de victoria
+    └── defeat.py          # Pantalla de derrota
