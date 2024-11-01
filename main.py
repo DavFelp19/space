@@ -11,8 +11,9 @@ def main():
     high_scores = highscores.Highscores()
     high_scores.cargar_highscores()
 
+    # Iniciar música de fondo
     pygame.mixer.music.load('sonidos/musica.wav')
-    pygame.mixer.music.play(-1)
+    pygame.mixer.music.play(-1)  # -1 para reproducir en loop
 
     while True:
         for event in pygame.event.get():
@@ -23,7 +24,7 @@ def main():
         if game_state.estado == "menu":
             menu.mostrar_menu(pantalla, fuente, game_state)
         elif game_state.estado == "juego":
-            game.jugar(pantalla, game_state, fuente)
+            game.Juego(pantalla, game_state, fuente).jugar()
         elif game_state.estado == "victoria":
             victory.mostrar_pantalla_victoria(pantalla, fuente, game_state)
             high_scores.agregar_puntaje(game_state.puntuacion1)

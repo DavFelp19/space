@@ -1,113 +1,110 @@
 import pygame
-import os
 import random
-from random import choice, randint
 from classes.player import Jugador
-from classes.obstacle import Bloque
-from classes.enemy import Alien  # Asegúrate de que la clase Alien esté en enemy.py
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# Forma del obstáculo
-forma_obstaculo = [
-    '  xxxxxxx  ',
-    ' xxxxxxxxx ',
-    'xxxxxxxxxxx',
-    'xxxxxxxxxxx',
-    'xxxxxxxxxxx',
-    'xxx     xxx',
-    'xx       xx'
-]
+from classes.enemy import Alien
+from classes.obstacle import Obstaculo
+from classes.bullet import Bala
 
 class Juego:
-    def __init__(self):
-        self.estado = "menu"
-        self.modo = None
-        self.fuente = pygame.font.Font(os.path.join(BASE_DIR, 'fuente', 'Pixeled.ttf'), 20)
-        self.configurar_sonidos()
-        self.reiniciar_juego()
+    def __init__(self, pantalla, game_state, fuente):
+        self.pantalla = pantalla
+        self.game_state = game_state
+        self.fuente = fuente
+        self.jugadores = pygame.sprite.Group()
+        self.enemigos = pygame.sprite.Group()
+        self.obstaculos = pygame.sprite.Group()
+        self.balas_jugador = pygame.sprite.Group()
+        self.balas_enemigo = pygame.sprite.Group()
+        self.sonido_laser = pygame.mixer.Sound('sonidos/laser.wav')
+        self.sonido_explosion = pygame.mixer.Sound('sonidos/explosion.wav')
+        self.inicializar_juego()
 
-    def configurar_sonidos(self):
-        self.musica = pygame.mixer.Sound(os.path.join(BASE_DIR, 'sonidos', 'musica.wav'))
-        self.musica.set_volume(0.2)
-        self.sonido_explosion = pygame.mixer.Sound(os.path.join(BASE_DIR, 'sonidos', 'explosion.wav'))
-        self.sonido_explosion.set_volume(0.3)
+    def inicializar_juego(self):
+        # Crear jugadores
+        self.jugadores.add(Jugador(400, 550, 'jugador_celeste.png'))
+        if self.game_state.modo == "multijugador":
+            self.jugadores.add(Jugador(200, 550, 'jugador_morado.png'))
 
-    def reiniciar_juego(self):
-        self.jugador1 = None
-        self.jugador2 = None
-        self.vidas1 = 3
-        self.vidas2 = 3
-        self.puntuacion1 = 0
-        self.puntuacion2 = 0
-        self.bloques = pygame.sprite.Group()
-        self.aliens = pygame.sprite.Group()
-        self.lasers_alien = pygame.sprite.Group()
-        self.extra = pygame.sprite.GroupSingle()
-        self.tiempo_aparicion_extra = randint(40, 80)
-        self.direccion_alien = 1
-        self.crear_obstaculos()
-        self.configurar_aliens()
+        # Crear enemigos
+        for fila in range(5):
+            for columna in range(11):
+                x = 50 + columna * 50
+                y = 50 + fila * 40
+                tipo = 'rojo.png' if fila == 0 else 'verde.png' if fila < 3 else 'amarillo.png'
+                self.enemigos.add(Alien(x, y, tipo))
 
-    def crear_obstaculos(self):
-        for indice_obstaculo in range(4):
-            x_obstaculo = indice_obstaculo * (800 / 4) + 50
-            self.crear_obstaculo(x_obstaculo)
+        # Crear obstáculos
+        for i in range(4):
+            self.obstaculos.add(Obstaculo(100 + i * 200, 450))
 
-    def crear_obstaculo(self, x_obstaculo):
-        for indice_fila, fila in enumerate(forma_obstaculo):
-            for indice_columna, columna in enumerate(fila):
-                if columna == 'x':
-                    x = x_obstaculo + (indice_columna * 30)
-                    y = 600 - (indice_fila * 30 + 50)
-                    self.bloques.add(Bloque(30, 'grey', x, y))
+    def manejar_eventos(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.game_state.estado = "menu"
+                    return False
+                if event.key == pygame.K_RETURN:
+                    self.disparar(self.jugadores.sprites()[0])
+                if event.key == pygame.K_SPACE and self.game_state.modo == "multijugador":
+                    self.disparar(self.jugadores.sprites()[1])
+        return True
 
-    def configurar_aliens(self):
-        for fila in range(6):
-            for columna in range(8):
-                x = columna * 60 + 60
-                y = fila * 40 + 100
-                if fila == 0:
-                    alien = Alien('rojo', x, y)
-                elif fila == 1 or fila == 2:
-                    alien = Alien('verde', x, y)
-                else:
-                    alien = Alien('azul', x, y)
-                self.aliens.add(alien)
+    def actualizar(self):
+        self.jugadores.update()
+        self.enemigos.update()
+        self.balas_jugador.update()
+        self.balas_enemigo.update()
 
-    def dibujar_elementos(self, pantalla):
-        self.bloques.draw(pantalla)
-        self.aliens.draw(pantalla)
-        self.lasers_alien.draw(pantalla)
-        self.extra.draw(pantalla)
-        if self.jugador1:
-            self.jugador1.lasers.draw(pantalla)
-        if self.jugador2:
-            self.jugador2.lasers.draw(pantalla)
+        # Colisiones
+        for bala in self.balas_jugador:
+            enemigos_golpeados = pygame.sprite.spritecollide(bala, self.enemigos, True)
+            if enemigos_golpeados:
+                self.sonido_explosion.play()
+                self.game_state.puntuacion1 += 100
+                bala.kill()
 
-    def revisar_colisiones(self):
-        # Colisiones de láser jugador con aliens
-        for jugador in [self.jugador1, self.jugador2]:
-            if jugador:
-                for laser in jugador.lasers:
-                    aliens_golpeados = pygame.sprite.spritecollide(laser, self.aliens, True)
-                    if aliens_golpeados:
-                        laser.kill()
-                        if jugador == self.jugador1:
-                            self.puntuacion1 += 100 * len(aliens_golpeados)
-                        else:
-                            self.puntuacion2 += 100 * len(aliens_golpeados)
-                        self.sonido_explosion.play()
+        for bala in self.balas_enemigo:
+            jugadores_golpeados = pygame.sprite.spritecollide(bala, self.jugadores, False)
+            if jugadores_golpeados:
+                self.game_state.vidas -= 1
+                bala.kill()
 
-    def jugar(self, pantalla):
-        """Lógica principal del juego."""
-        self.jugador1.update()
-        if self.jugador2:
-            self.jugador2.update()
+        # Disparo aleatorio de enemigos
+        if random.randint(1, 100) == 1:
+            if self.enemigos:
+                enemigo = random.choice(self.enemigos.sprites())
+                self.balas_enemigo.add(Bala(enemigo.rect.centerx, enemigo.rect.bottom, 1))
 
-        self.aliens .update()
-        self.lasers_alien.update()
-        self.extra.update()
+        # Verificar victoria o derrota
+        if not self.enemigos:
+            self.game_state.estado = "victoria"
+        elif self.game_state.vidas <= 0:
+            self.game_state.estado = "derrota"
 
-        self.revisar_colisiones()
-        self.dibujar_elementos(pantalla)
+    def disparar(self, jugador):
+        self.sonido_laser.play()
+        self.balas_jugador.add(Bala(jugador.rect.centerx, jugador.rect.top, -1))
+
+    def dibujar(self):
+        self.pantalla.fill('black')
+        self.jugadores.draw(self.pantalla)
+        self.enemigos.draw(self.pantalla)
+        self.obstaculos.draw(self.pantalla)
+        self.balas_jugador.draw(self.pantalla)
+        self.balas_enemigo.draw(self.pantalla)
+
+        # Dibujar puntuación y vidas
+        texto_puntuacion = self.fuente.render(f'Puntuación: {self.game_state.puntuacion1}', True, 'white')
+        texto_vidas = self.fuente.render(f'Vidas: {self.game_state.vidas}', True, 'white')
+        self.pantalla.blit(texto_puntuacion, (10, 10))
+        self.pantalla.blit(texto_vidas, (600, 10))
+
+    def jugar(self):
+        continuar = True
+        while continuar and self.game_state.estado == "juego":
+            continuar = self.manejar_eventos()
+            self.actualizar()
+            self.dibujar()
+            pygame.display.flip()

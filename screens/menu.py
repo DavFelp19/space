@@ -3,16 +3,18 @@ import pygame
 def mostrar_menu(pantalla, fuente, game_state):
     pantalla.fill('black')
     menu_texto = [
-        'Presiona 1 para jugar en modo individual',
-        'Presiona 2 para jugar en modo multijugador',
-        'Presiona 3 para ver los high scores',
-        'Presiona 4 para ver la ayuda',
-        'Presiona 5 para salir'
+        'Space Invaders',
+        '1 - Modo Individual',
+        '2 - Modo Multijugador',
+        f'3 - Dificultad: {game_state.dificultad}',
+        '4 - Ver High Scores',
+        '5 - Ayuda',
+        '6 - Salir'
     ]
 
     for i, linea in enumerate(menu_texto):
         texto = fuente.render(linea, True, 'white')
-        pantalla.blit(texto, (100, 50 + i * 30))
+        pantalla.blit(texto, (100, 50 + i * 50))
 
     pygame.display.flip()
 
@@ -23,18 +25,23 @@ def mostrar_menu(pantalla, fuente, game_state):
                 if event.key == pygame.K_1:
                     game_state.estado = "juego"
                     game_state.modo = "individual"
+                    game_state.reiniciar()
                     esperando = False
                 elif event.key == pygame.K_2:
                     game_state.estado = "juego"
                     game_state.modo = "multijugador"
+                    game_state.reiniciar()
                     esperando = False
                 elif event.key == pygame.K_3:
+                    game_state.cambiar_dificultad()
+                    return  # Volver a mostrar el menú con la nueva dificultad
+                elif event.key == pygame.K_4:
                     game_state.estado = "highscores"
                     esperando = False
-                elif event.key == pygame.K_4:
+                elif event.key == pygame.K_5:
                     game_state.estado = "ayuda"
                     esperando = False
-                elif event.key == pygame.K_5:
+                elif event.key == pygame.K_6:
                     pygame.quit()
                     return
             if event.type == pygame.QUIT:
