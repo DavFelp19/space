@@ -1,3 +1,5 @@
+import sys
+
 import pygame
 
 def mostrar_menu(pantalla, fuente, game_state):
@@ -43,7 +45,4 @@ def mostrar_menu(pantalla, fuente, game_state):
                     esperando = False
                 elif event.key == pygame.K_6:
                     pygame.quit()
-                    return
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
+                    sys.exit()

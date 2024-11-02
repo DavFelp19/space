@@ -10,6 +10,7 @@ class Obstaculo(pygame.sprite.Sprite):
 
     def dañar(self, x, y):
         pos_relativa = x - self.rect.x, y - self.rect.y
-        if self.mascara.get_at(pos_relativa):
-            pygame.draw.circle(self.image, 'black', pos_relativa, 3)
-            self.mascara = pygame.mask.from_surface(self.image)
+        if 0 <= pos_relativa[0] < self.rect.width and 0 <= pos_relativa[1] < self.rect.height:
+            if self.mascara.get_at(pos_relativa):
+                pygame.draw.circle(self.image, 'black', pos_relativa, 3)
+                self.mascara = pygame.mask.from_surface(self.image)

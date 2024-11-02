@@ -6,7 +6,7 @@ class Bala(pygame.sprite.Sprite):
         self.image = pygame.Surface((4, 10))
         self.image.fill('white')
         self.rect = self.image.get_rect(center=(x, y))
-        self.velocidad = 5 * direccion
+        self.velocidad = 1 * direccion
 
     def update(self):
         self.rect.y += self.velocidad

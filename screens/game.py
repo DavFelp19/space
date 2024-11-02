@@ -1,10 +1,16 @@
 import pygame
 import random
+from typing import List, Dict, Any
+import sys
 from classes.player import Jugador
 from classes.enemy import Alien
 from classes.obstacle import Obstaculo
 from classes.bullet import Bala
-
+import random
+from config import DIFFICULTY_LEVELS
+MAX_BALAS_ENEMIGAS = 4
+import pygame
+from pygame.sprite import Group, Sprite
 class Juego:
     def __init__(self, pantalla, game_state, fuente):
         self.pantalla = pantalla
@@ -17,13 +23,14 @@ class Juego:
         self.balas_enemigo = pygame.sprite.Group()
         self.sonido_laser = pygame.mixer.Sound('sonidos/laser.wav')
         self.sonido_explosion = pygame.mixer.Sound('sonidos/explosion.wav')
+        self.tiempo_ultimo_disparo = pygame.time.get_ticks() #inicio tiempo de disparo
         self.inicializar_juego()
 
     def inicializar_juego(self):
         # Crear jugadores
-        self.jugadores.add(Jugador(400, 550, 'jugador_celeste.png'))
+        self.jugadores.add(Jugador(400, 550, 'jugador_celeste.png', True))  # Jugador 1
         if self.game_state.modo == "multijugador":
-            self.jugadores.add(Jugador(200, 550, 'jugador_morado.png'))
+            self.jugadores.add(Jugador(200, 550, 'jugador_morado.png', False))  # Jugador 2
 
         # Crear enemigos
         for fila in range(5):
@@ -40,7 +47,8 @@ class Juego:
     def manejar_eventos(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return False
+                pygame.quit()
+                sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.game_state.estado = "menu"
@@ -52,10 +60,52 @@ class Juego:
         return True
 
     def actualizar(self):
+        # PRIMERA verificación: si no hay vidas, es derrota inmediata
+        if self.game_state.vidas <= 0:
+            self.game_state.estado = "derrota"
+            return False  # Retornamos False para indicar que el juego debe terminar
+        tiempo_actual = pygame.time.get_ticks()
         self.jugadores.update()
         self.enemigos.update()
         self.balas_jugador.update()
         self.balas_enemigo.update()
+        colisiones: Dict[Sprite, List[Sprite]] = pygame.sprite.groupcollide(self.balas_jugador, self.enemigos, True,
+                                                                            True)
+
+        # Control de disparo de enemigos
+        # Control de disparo de enemigos
+        if self.enemigos:
+            try:
+                dificultad = DIFFICULTY_LEVELS[self.game_state.dificultad]
+                balas_por_segundo = dificultad['enemy_bullet_freq'][self.game_state.modo]
+                self.intervalo_disparo = 1000 / balas_por_segundo
+            except KeyError:
+                print(f"Error: Dificultad '{self.game_state.dificultad}' o modo '{self.game_state.modo}' no encontrado.")
+                return
+
+            # Verificar si es tiempo de disparar
+            if tiempo_actual - self.tiempo_ultimo_disparo >= self.intervalo_disparo:
+                self.disparar_enemigo()
+                self.tiempo_ultimo_disparo = tiempo_actual
+        # Colisiones balas jugador con obstáculos
+        for bala in self.balas_jugador:
+            obstaculo_golpeado = pygame.sprite.spritecollideany(bala, self.obstaculos)
+            if obstaculo_golpeado:
+                obstaculo_golpeado.dañar(bala.rect.centerx, bala.rect.centery)
+                bala.kill()
+
+        # Colisiones balas enemigo con obstáculos
+        for bala in self.balas_enemigo:
+            obstaculo_golpeado = pygame.sprite.spritecollideany(bala, self.obstaculos)
+            if obstaculo_golpeado:
+                obstaculo_golpeado.dañar(bala.rect.centerx, bala.rect.centery)
+                bala.kill()
+
+        # Disparo aleatorio de enemigos
+        if self.enemigos:
+            if random.randint(1, 100) == 1:
+                enemigo = random.choice(self.enemigos.sprites())
+                self.balas_enemigo.add(Bala(enemigo.rect.centerx, enemigo.rect.bottom, 1))
 
         # Colisiones
         for bala in self.balas_jugador:
@@ -65,23 +115,22 @@ class Juego:
                 self.game_state.puntuacion1 += 100
                 bala.kill()
 
+        # Colisiones con jugadores
         for bala in self.balas_enemigo:
             jugadores_golpeados = pygame.sprite.spritecollide(bala, self.jugadores, False)
             if jugadores_golpeados:
                 self.game_state.vidas -= 1
                 bala.kill()
+                if self.game_state.vidas <= 0:
+                    self.game_state.estado = "derrota"
+                    return False
 
-        # Disparo aleatorio de enemigos
-        if random.randint(1, 100) == 1:
-            if self.enemigos:
-                enemigo = random.choice(self.enemigos.sprites())
-                self.balas_enemigo.add(Bala(enemigo.rect.centerx, enemigo.rect.bottom, 1))
-
-        # Verificar victoria o derrota
-        if not self.enemigos:
+        # Victoria solo si quedan vidas y no hay enemigos
+        if len(self.enemigos) == 0 and self.game_state.vidas > 0:
             self.game_state.estado = "victoria"
-        elif self.game_state.vidas <= 0:
-            self.game_state.estado = "derrota"
+            return False
+
+        return True
 
     def disparar(self, jugador):
         self.sonido_laser.play()
@@ -108,3 +157,11 @@ class Juego:
             self.actualizar()
             self.dibujar()
             pygame.display.flip()
+    def disparar_enemigo(self):
+        if self.enemigos and len(self.balas_enemigo) < MAX_BALAS_ENEMIGAS:
+            enemigo = random.choice(self.enemigos.sprites())
+            nueva_bala = Bala(enemigo.rect.centerx, enemigo.rect.bottom, 1)
+            self.balas_enemigo.add(nueva_bala)
+
+    def add_sprite(self, sprite: Sprite, group: Group) -> None:
+        group.add(sprite)

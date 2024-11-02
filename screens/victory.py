@@ -1,5 +1,5 @@
 import pygame
-
+import sys
 def mostrar_pantalla_victoria(pantalla, fuente, game_state):
     pantalla.fill('black')
     texto_victoria = fuente.render('¡VICTORIA!', True, 'white')
@@ -21,7 +21,4 @@ def mostrar_pantalla_victoria(pantalla, fuente, game_state):
                     esperando = False
                 elif event.key == pygame.K_2:
                     pygame.quit()
-                    return
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                return
+                    sys.exit()

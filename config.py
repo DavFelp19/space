@@ -19,18 +19,30 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-# Configuración del juego
-PLAYER_SPEED = 0.0000001
-BULLET_SPEED = 0.000000000014
-ENEMY_SPEED = 0.0000000001
-
 # Niveles de dificultad
 DIFFICULTY_LEVELS = {
-    'FACIL': {'enemy_speed': 1, 'enemy_bullet_freq': 3},
-    'MEDIO': {'enemy_speed': 2, 'enemy_bullet_freq': 2},
-    'DIFICIL': {'enemy_speed': 3, 'enemy_bullet_freq': 1}
+    'FACIL': {
+        'enemy_speed': 1,
+        'enemy_bullet_freq': {
+            'individual': 1,
+            'multijugador': 2
+        }
+    },
+    'MEDIO': {
+        'enemy_speed': 2,
+        'enemy_bullet_freq': {
+            'individual': 2,
+            'multijugador': 3
+        }
+    },
+    'DIFICIL': {
+        'enemy_speed': 3,
+        'enemy_bullet_freq': {
+            'individual': 3,
+            'multijugador': 4
+        }
+    }
 }
-
 # Puntuaciones
 SCORE_PER_ENEMY = {
     'rojo.png': 100,

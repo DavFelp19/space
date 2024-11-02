@@ -1,5 +1,5 @@
 import pygame
-
+import sys
 def mostrar_ayuda(pantalla, fuente):
     pantalla.fill('black')
     texto_titulo = fuente.render('Ayuda', True, 'white')
@@ -7,7 +7,7 @@ def mostrar_ayuda(pantalla, fuente):
 
     instrucciones = [
         "Controles:",
-        "Jugador 1: Flechas izquierda/derecha para moverse, Enter para disparar",
+        "Jugador 1: Flechas para moverse, Enter para disparar",
         "Jugador 2: A/D para moverse, Espacio para disparar",
         "Objetivo: Elimina a todos los aliens antes de que te eliminen",
         "Presiona cualquier tecla para volver al menú"
@@ -22,8 +22,10 @@ def mostrar_ayuda(pantalla, fuente):
     esperando = True
     while esperando:
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                esperando = False
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return "menu"  # Retorna al menú cuando se presiona una tecla
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                return "menu"  # Retorna al menú cuando se hace clic
