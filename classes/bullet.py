@@ -1,7 +1,8 @@
 import pygame
+from typing import Union
 
 class Bala(pygame.sprite.Sprite):
-    def __init__(self, x, y, direccion):
+    def __init__(self, x: int, y: int, direccion: int):
         super().__init__()
         self.image = pygame.Surface((4, 10))
         self.image.fill('white')

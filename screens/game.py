@@ -1,5 +1,3 @@
-import pygame
-import random
 from typing import List, Dict, Any
 import sys
 from classes.player import Jugador
@@ -64,29 +62,51 @@ class Juego:
         if self.game_state.vidas <= 0:
             self.game_state.estado = "derrota"
             return False  # Retornamos False para indicar que el juego debe terminar
-        tiempo_actual = pygame.time.get_ticks()
+
         self.jugadores.update()
         self.enemigos.update()
         self.balas_jugador.update()
         self.balas_enemigo.update()
-        colisiones: Dict[Sprite, List[Sprite]] = pygame.sprite.groupcollide(self.balas_jugador, self.enemigos, True,
-                                                                            True)
 
-        # Control de disparo de enemigos
-        # Control de disparo de enemigos
-        if self.enemigos:
-            try:
-                dificultad = DIFFICULTY_LEVELS[self.game_state.dificultad]
-                balas_por_segundo = dificultad['enemy_bullet_freq'][self.game_state.modo]
-                self.intervalo_disparo = 1000 / balas_por_segundo
-            except KeyError:
-                print(f"Error: Dificultad '{self.game_state.dificultad}' o modo '{self.game_state.modo}' no encontrado.")
-                return
+        # Determinar el límite de balas según el modo y dificultad
+        limite_balas = 1  # Por defecto
+        if self.game_state.modo == "individual":
+            if self.game_state.dificultad == "FACIL":
+                limite_balas = 1
+            elif self.game_state.dificultad == "MEDIO":
+                limite_balas = 2
+            else:  # DIFICIL
+                limite_balas = 3
+        else:  # modo multijugador
+            if self.game_state.dificultad == "FACIL":
+                limite_balas = 2
+            elif self.game_state.dificultad == "MEDIO":
+                limite_balas = 4
+            else:  # DIFICIL
+                limite_balas = 6
 
-            # Verificar si es tiempo de disparar
-            if tiempo_actual - self.tiempo_ultimo_disparo >= self.intervalo_disparo:
-                self.disparar_enemigo()
-                self.tiempo_ultimo_disparo = tiempo_actual
+        # Solo disparar si hay menos balas que el límite
+        if len(self.balas_enemigo) < limite_balas:
+            if self.enemigos:
+                for _ in range(limite_balas - len(self.balas_enemigo)):
+                    enemigo = random.choice(self.enemigos.sprites())
+                    nueva_bala = Bala(enemigo.rect.centerx, enemigo.rect.bottom, 1)
+                    self.balas_enemigo.add(nueva_bala)
+
+
+        for bala in self.balas_jugador:
+            enemigos_golpeados = pygame.sprite.spritecollide(bala, self.enemigos, True)
+            if enemigos_golpeados:
+                self.sonido_explosion.play()
+                self.game_state.puntuacion1 += 100
+                bala.kill()
+
+        for bala in self.balas_enemigo:
+            jugadores_golpeados = pygame.sprite.spritecollide(bala, self.jugadores, False)
+            if jugadores_golpeados:
+                self.game_state.vidas -= 1
+                bala.kill()
+
         # Colisiones balas jugador con obstáculos
         for bala in self.balas_jugador:
             obstaculo_golpeado = pygame.sprite.spritecollideany(bala, self.obstaculos)
